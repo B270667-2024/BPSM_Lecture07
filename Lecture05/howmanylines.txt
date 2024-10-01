@@ -1,0 +1,2 @@
+Tue  1 Oct 23:45:39 BST 2024 	 2 awkoutputfile.txt
+Tue  1 Oct 23:45:39 BST 2024 	 24 myawkscript.awk
