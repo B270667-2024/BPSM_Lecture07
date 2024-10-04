@@ -1,62 +1,128 @@
 #!/bin/bash
 
-# 定义输入文件
-input_file="example_people_data.tsv"
-
-# 初始化变量
 count=0
-declare -A country_files  # 用于存储国家对应的文件
-october_people=()         # 用于存储十月份出生的人
+IFS=$'\t'
+while read name email city birthday_day birthday_month birthday_year country
+do
+if test -z ${name} 
+ then
+ echo -e "X\tBlank line found"
+ else
+ if test ${country} == "country"
+  then
+  echo -e "X\tHeader line found"
+  else
+   count=$((count+1))
+   echo -e "${count}\t${country}"
+ fi  # a real country
+fi   # a blank line
+done <  example_people_data.tsv
 
-# 处理文件
-while IFS=$'\t' read -r name email city birthday_day birthday_month birthday_year country; do
-    # 跳过标题行和空行
-    if [[ "$name" == "name" ]] || [[ -z "$name" ]]; then
-        continue
-    fi
-    
-    # 输出索引、姓名、城市和国家
-    count=$((count + 1))
-    echo "${count} : ${name}, ${city}, ${country}"
-    
-    # 将每个人按国家分文件存储
-    if [[ ! -v country_files["$country"] ]]; then
-        country_files["$country"]="file_${country// /_}.txt"  # 替换空格为下划线
-    fi
-    echo "${name}, ${city}, ${birthday_day}-${birthday_month}-${birthday_year}" >> "${country_files["$country"]}"
+count=0; IFS=$'\t';
+while read name email city birthday_day birthday_month birthday_year country
+do
+if test -z ${name} || test ${country} == "country"
+ then
+  count=count;# a meaningless action, it does nothing useful
+ else
+ echo "outputfile1 will be ${country}.details";
+ 
+ echo "outputfile2 will be ${country// /}.details" 
+fi
+done <  example_people_data.tsv | head -10
 
-    # 检查是否在十月份出生
-    if [[ "$birthday_month" == "10" ]]; then
-        october_people+=("$name from $country")
-    fi
-done < "$input_file"
+count=0; IFS=$'\t';
+rm  -f *.details
+while read name email city birthday_day birthday_month birthday_year country
+do
+if test -z ${name} || test ${country} == "country"
+ then
+ echo "Ignoring"
+ else
+ count=$((count+1));
+ echo -e "${count}\t${name}\t$city\t${country}" >> ${country// /}.details 
+fi
+done < example_people_data.tsv
 
-# 输出十月份出生的人
-echo -e "\n十月份出生的人："
-for person in "${october_people[@]}"; do
-    echo "$person"
-done
 
-# 输出每个国家的十月份出生的人
-echo -e "\n各国的十月份出生的人："
-for country in "${!country_files[@]}"; do
-    echo -e "\n在 ${country} 出生的人："
-    grep "10" "${country_files["$country"]}" | while IFS=',' read -r name city birthday; do
-        echo "姓名：$name, 城市：$city, 出生日期：$birthday"
-    done
-done
+count=0; IFS=$'\t';
+rm  -f *.details
+while read name email city birthday_day birthday_month birthday_year country
+do
+if test -z ${name} || test ${country} == "country"
+ then
+ continue
+ else
+ count=$((count+1));
 
-# 处理莫桑比克的数据
-echo -e "\n莫桑比克的数据："
-mozambique_people=()  # 用于存储莫桑比克的数据
-while IFS=$'\t' read -r name email city birthday_day birthday_month birthday_year country; do
-    if [[ "$country" == "Mozambique" ]]; then
-        mozambique_people+=("$name, $city, $birthday_day-$birthday_month-$birthday_year")
-    fi
-done < "$input_file"
+outputfile=${country// /}.younger.details
+ if test ${birthday_year} -le 1980
+   then 
+   outputfile=${country// /}.older.details
+ fi # birthday before 1980, so "older" person
+echo -e "${count}\t${name}\t${birthday_year}\t${country}" >> ${outputfile} 
+fi  
+done <  example_people_data.tsv
 
-# 输出莫桑比克的数据
-for person in "${mozambique_people[@]}"; do
-    echo "$person"
-done
+count=0; IFS=$'\t';
+month=10
+outputfile="Month.$month.details"
+rm  -f *.details
+while read name email city birthday_day birthday_month birthday_year country
+do
+if test -z ${name} || test ${country} == "country"
+ then
+ echo "Ignoring"
+ else
+ count=$((count+1));
+ 
+ if test ${birthday_month} -eq $month
+   then 
+   echo -e "${count}\t${name}\t${birthday_month}\t${country}" >> ${outputfile}
+ fi # birthday month
+fi  
+done <  example_people_data.tsv
+
+count=0; fnr=0; IFS=$'\t';
+wantedcountry="Mozambique"
+inputfile="example_people_data.tsv"
+inputfilelength=$(wc -l ${inputfile} | cut -d ' ' -f1)
+outputfile="Country.${wantedcounty}.details"
+
+rm  -f *.details
+unset my_array
+declare -A my_array
+
+while read name email city birthday_day birthday_month birthday_year country
+do
+fnr=$((fnr + 1))
+# echo "Line number: ${fnr}"
+if test -z ${name} || test ${country} == "country" 
+ then
+ echo "" > /dev/null
+ else
+ if test ${country} == ${wantedcounty}
+   then
+   count=$((count+1));
+   my_array[${count}]="${fnr}\t${name}\t${country}"
+   # echo -e "${my_array[${count}]}"
+ fi
+fi  
+# End of the file
+if test ${fnr} -eq ${inputfilelength}
+ then
+ echo -e "\n### Here are the end of file results for ${wantedcounty}:" > ${outputfile} 
+ for i in "${my_array[@]}"; do echo -e "$i" >> ${outputfile}; done
+ fi
+done <  ${inputfile}
+
+
+
+
+
+
+
+
+
+
 
